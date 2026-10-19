@@ -18,7 +18,7 @@
 <section id="welcome" class="panel hero center"><div class="eyebrow">Acceso reservado · Protocolo de aptitud</div><h1>Evaluación del Tributo</h1><p>Expediente S-12 · Samuel</p><p class="muted">El Capitolio requiere la certificación de sus capacidades antes de autorizar su participación en los Juegos.</p><button class="btn" id="start">ACCEDER AL EXPEDIENTE →</button></section>
 <section id="dashboard" class="hidden"><div class="panel"><div class="flex"><div><div class="eyebrow">Expediente activo</div><h1 style="font:36px Georgia,serif;margin:5px 0;color:#e8d6ac">Tributo Samuel</h1><div class="muted">Identificación S-12 · Evaluación preliminar</div></div><div style="min-width:210px"><div class="flex"><span class="muted">Progreso</span><strong id="progress-label">0 / 6</strong></div><div class="bar" style="margin-top:10px"><span id="progress-bar" style="width:0%"></span></div></div></div></div><div class="panel"><div class="eyebrow">Módulos de certificación</div><h2>Pruebas oficiales</h2><div class="grid" id="tiles"></div></div><div class="panel" id="results" style="display:none"><h2>Informe de los Vigilantes</h2><p id="score"></p><p class="muted">Cada módulo se evalúa sobre 12 puntos. La puntuación global se calculará cuando estén disponibles las seis pruebas.</p></div></section>
 <section id="test" class="panel hidden"><div class="flex"><div><div class="eyebrow">Módulo 01 · Inspección de suministros</div><h2 id="test-title">Evaluación visual</h2></div><div class="clock" id="timer"></div></div><div class="bar"><span id="test-progress" style="width:0%"></span></div><div id="test-content"></div></section>
-<footer class="foot">SISTEMA DE EVALUACIÓN S-12 · ACCESO RESTRINGIDO · PROTOTIPO V5 · MÓDULOS 01–04</footer></main>
+<section id="admin-panel" class="panel hidden" style="border:1px solid #9b7d45;margin-top:18px"><div class="flex"><div><div class="eyebrow">Solo para organizador</div><h2>Consola de los Vigilantes</h2></div><button class="btn small secondary" id="admin-close">Cerrar</button></div><p class="muted">Control de pruebas y seguimiento local de este navegador. No es un panel remoto.</p><div id="admin-stats"></div><div id="admin-actions" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:15px"></div></section><footer class="foot">SISTEMA DE EVALUACIÓN S-12 · ACCESO RESTRINGIDO · PROTOTIPO V6 · MÓDULOS 01–04 · ADMIN</footer></main>
 <button class="chat-toggle" id="chat-toggle" aria-expanded="false">✉ Canal con Ale</button><aside class="chat hidden" id="chat"><div class="chat-head"><strong>Canal privado · Ale ❤️</strong><button class="btn small secondary" id="chat-close" aria-label="Cerrar chat">×</button></div><div class="chat-body"><div class="bubble"><b>Ale</b><br>¡Mucha suerte, Samu! ❤️ Estoy pendiente de ti. Si necesitas algo, escríbeme por WhatsApp.</div><div class="muted" style="font-size:12px">Versión 1: este panel es informativo. El chat en tiempo real llegará en una versión posterior.</div></div><div class="chat-foot"><input disabled placeholder="Mensajería disponible próximamente" aria-label="Chat aún no disponible"><button class="btn small" disabled>Enviar</button></div></aside>
 <script>
 (()=>{'use strict';
@@ -49,7 +49,7 @@ let round=0,qIndex=0,remaining=30,ticker=null,correct=0,total=0,phase='',deadlin
 const SESSION='capitolio_s12_observacion_v2';
 function persist(){localStorage.setItem(SESSION,JSON.stringify({round,qIndex,correct,total,phase,deadline,answers:state.answers}))}
 function show(id){['welcome','dashboard','test'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
-function dashboard(){clearInterval(ticker);show('dashboard');const done=(state.completed?1:0)+(state.cipherCompleted?1:0)+(state.auditCompleted?1:0)+(state.patternCompleted?1:0);$('progress-label').textContent=done+' / 6';$('progress-bar').style.width=(done/6*100)+'%';$('tiles').innerHTML='';modules.forEach((m,i)=>{const d=document.createElement('div');d.className='tile';const status=i===0?(state.completed?'SUPERADA':'DISPONIBLE'):i===1?(state.cipherCompleted?'SUPERADA':state.completed?'DISPONIBLE':'BLOQUEADA · Completa el módulo 01'):i===2?(state.auditCompleted?'SUPERADA':state.cipherCompleted?'DISPONIBLE':'BLOQUEADA · Completa el módulo 02'):i===3?(state.patternCompleted?'SUPERADA':state.auditCompleted?'DISPONIBLE':'BLOQUEADA · Completa el módulo 03'):'PRÓXIMAMENTE';d.innerHTML='<div class="num">MÓDULO '+m[0]+'</div><h3>'+m[1]+'</h3><div class="muted">'+m[2]+'</div><p class="status '+(state.completed&&i===0?'ok':'')+'">'+status+'</p>';if(i===0){const b=document.createElement('button');b.className='btn small';b.textContent=state.completed?'Repetir prueba':localStorage.getItem(SESSION)?'Continuar prueba':'Iniciar prueba';b.onclick=()=>{if(localStorage.getItem(SESSION))resumeTest();else startTest()};d.append(b)}if(i===1){const b=document.createElement('button');b.className='btn small';b.disabled=!state.completed;b.textContent=state.cipherCompleted?'Repetir prueba':localStorage.getItem(CIPHER_SESSION)?'Continuar prueba':'Iniciar criptografía';b.onclick=()=>startCipher(false);d.append(b)}if(i===2){const b=document.createElement('button');b.className='btn small';b.disabled=!state.cipherCompleted;b.textContent=state.auditCompleted?'Repetir prueba':localStorage.getItem(AUDIT_SESSION)?'Continuar auditoría':'Iniciar auditoría';b.onclick=()=>startAudit(false);d.append(b)}if(i===3){const b=document.createElement('button');b.className='btn small';b.disabled=!state.auditCompleted;b.textContent=state.patternCompleted?'Repetir prueba':localStorage.getItem(PATTERN_SESSION)?'Continuar patrones':'Iniciar patrones';b.onclick=()=>startPattern(false);d.append(b)}$('tiles').append(d)});$('results').style.display=state.completed?'block':'none';if(state.completed)$('score').textContent='Observación: '+state.score+' / 12'+(state.cipherCompleted?' · Criptografía: '+state.cipherScore+' / 12':'')+(state.auditCompleted?' · Auditoría: '+state.auditScore+' / 12':'')+(state.patternCompleted?' · Patrones: '+state.patternScore+' / 12':'')}
+function dashboard(){clearInterval(ticker);$('admin-panel').classList.add('hidden');show('dashboard');const done=(state.completed?1:0)+(state.cipherCompleted?1:0)+(state.auditCompleted?1:0)+(state.patternCompleted?1:0);$('progress-label').textContent=done+' / 6';$('progress-bar').style.width=(done/6*100)+'%';$('tiles').innerHTML='';modules.forEach((m,i)=>{const d=document.createElement('div');d.className='tile';const status=i===0?(state.completed?'SUPERADA':'DISPONIBLE'):i===1?(state.cipherCompleted?'SUPERADA':state.completed?'DISPONIBLE':'BLOQUEADA · Completa el módulo 01'):i===2?(state.auditCompleted?'SUPERADA':state.cipherCompleted?'DISPONIBLE':'BLOQUEADA · Completa el módulo 02'):i===3?(state.patternCompleted?'SUPERADA':state.auditCompleted?'DISPONIBLE':'BLOQUEADA · Completa el módulo 03'):'PRÓXIMAMENTE';d.innerHTML='<div class="num">MÓDULO '+m[0]+'</div><h3>'+m[1]+'</h3><div class="muted">'+m[2]+'</div><p class="status '+(state.completed&&i===0?'ok':'')+'">'+status+'</p>';if(i===0){const b=document.createElement('button');b.className='btn small';b.textContent=state.completed?'Repetir prueba':localStorage.getItem(SESSION)?'Continuar prueba':'Iniciar prueba';b.onclick=()=>{if(localStorage.getItem(SESSION))resumeTest();else startTest()};d.append(b)}if(i===1){const b=document.createElement('button');b.className='btn small';b.disabled=!state.completed;b.textContent=state.cipherCompleted?'Repetir prueba':localStorage.getItem(CIPHER_SESSION)?'Continuar prueba':'Iniciar criptografía';b.onclick=()=>startCipher(false);d.append(b)}if(i===2){const b=document.createElement('button');b.className='btn small';b.disabled=!state.cipherCompleted;b.textContent=state.auditCompleted?'Repetir prueba':localStorage.getItem(AUDIT_SESSION)?'Continuar auditoría':'Iniciar auditoría';b.onclick=()=>startAudit(false);d.append(b)}if(i===3){const b=document.createElement('button');b.className='btn small';b.disabled=!state.auditCompleted;b.textContent=state.patternCompleted?'Repetir prueba':localStorage.getItem(PATTERN_SESSION)?'Continuar patrones':'Iniciar patrones';b.onclick=()=>startPattern(false);d.append(b)}$('tiles').append(d)});$('results').style.display=state.completed?'block':'none';if(state.completed)$('score').textContent='Observación: '+state.score+' / 12'+(state.cipherCompleted?' · Criptografía: '+state.cipherScore+' / 12':'')+(state.auditCompleted?' · Auditoría: '+state.auditScore+' / 12':'')+(state.patternCompleted?' · Patrones: '+state.patternScore+' / 12':'')}
 function startTest(){localStorage.removeItem(SESSION);round=0;qIndex=0;correct=0;total=0;state.answers=[];save();show('test');roundIntro()}
 function roundIntro(){phase='intro';clearInterval(ticker);$('timer').textContent='RONDA '+(round+1)+' / 3';$('test-title').textContent='Inspección visual · '+rounds[round].title;$('test-progress').style.width=(round/3*100)+'%';$('test-content').innerHTML='<div class="intro-card"><div class="eyebrow">Departamento de los Vigilantes · Ronda '+(round+1)+'</div><h3>'+rounds[round].title+'</h3><p>Cuando pulses iniciar, aparecerá una fotografía grande durante <b>30 segundos</b>. Memoriza dónde están los objetos. Después desaparecerá y responderás cinco preguntas sin volver a verla.</p><p class="note">El cronómetro no se puede pausar. Prepárate antes de comenzar.</p><button class="btn" id="ready">INICIAR OBSERVACIÓN DE 30 SEGUNDOS →</button></div>';$('ready').onclick=beginRound;persist()}
 function beginRound(){phase='memory';clearInterval(ticker);deadline=Date.now()+30000;persist();renderMemory();ticker=setInterval(tick,200)}
@@ -85,26 +85,31 @@ function finishCipher(){state.cipherCompleted=true;state.cipherMistakes=cipher.m
 // MÓDULO 03 · AUDITORÍA DE SEGURIDAD: tres expedientes de deducción.
 const AUDIT_SESSION='capitolio_s12_auditoria_v4';
 const auditCases=[
- {title:'El acceso no autorizado',brief:'Una puerta de seguridad se abrió a las 22:14. Solo una credencial podía haberla activado.',facts:[
- ['Registro de acceso','Puerta N-4 · 22:14 · credencial terminada en 08'],
- ['Credenciales','Livia: 03 · Cato: 08 · Octavia: 11 · Darius: 17'],
- ['Cámaras','La cámara del pasillo estuvo desconectada de 22:10 a 22:18'],
- ['Declaración','Cato asegura que nunca utilizó su tarjeta esa noche']],
- q:'¿Qué credencial abrió la puerta N-4?',options:['La de Livia','La de Cato','La de Octavia','La de Darius'],correct:1,explain:'El registro identifica la credencial terminada en 08, asignada a Cato. Esto no demuestra por sí solo quién la llevaba.'},
- {title:'El informe alterado',brief:'Alguien modificó un informe confidencial. Debes identificar qué terminal realizó la modificación.',facts:[
- ['Historial','Documento modificado a las 16:42 desde terminal T-3'],
- ['Terminal T-1','Desconectada desde las 16:00'],
- ['Terminal T-2','Operativa entre las 16:30 y las 17:00'],
- ['Terminal T-3','Conectada entre las 16:40 y las 16:50'],
- ['Terminal T-4','En mantenimiento desde las 15:30']],
- q:'¿Qué terminal modificó el informe?',options:['T-1','T-2','T-3','T-4'],correct:2,explain:'El historial indica explícitamente T-3 a las 16:42; estar operativa no convierte a T-2 en la autora del cambio.'},
- {title:'La orden falsificada',brief:'Tres mensajes dicen proceder del Alto Mando. Solo uno cumple todas las reglas de autenticación.',facts:[
- ['Protocolo','Una orden válida lleva sello OMEGA, prioridad ROJA y código par'],
- ['Mensaje A','Sello OMEGA · prioridad AZUL · código 42'],
- ['Mensaje B','Sello SIGMA · prioridad ROJA · código 84'],
- ['Mensaje C','Sello OMEGA · prioridad ROJA · código 27'],
- ['Mensaje D','Sello OMEGA · prioridad ROJA · código 64']],
- q:'¿Qué mensaje es auténtico?',options:['Mensaje A','Mensaje B','Mensaje C','Mensaje D'],correct:3,explain:'Solo el mensaje D reúne los tres requisitos: OMEGA, ROJA y código par (64).'}
+ {title:'La credencial clonada',brief:'Una puerta restringida se abrió a las 22:14. El registro identifica una credencial, pero no necesariamente a su propietario.',facts:[
+ ['Registro N-4','Apertura 22:14 · credencial 08 · acceso local, no remoto'],
+ ['Asignación de tarjetas','Livia: 03 · Cato: 08 · Octavia: 11 · Darius: 17'],
+ ['Incidencias','Cato denunció la pérdida de su tarjeta a las 21:50; fue bloqueada a las 22:20'],
+ ['Control biométrico','A las 22:13 el sensor de la puerta registró un guante, sin huella legible'],
+ ['Cámaras','Sin imagen entre las 22:10 y las 22:18']],
+ q:'¿Qué conclusión está realmente demostrada?',options:['Cato abrió la puerta','Octavia robó la tarjeta','Se utilizó la credencial asignada a Cato, pero no sabemos quién la llevaba','La apertura fue remota'],correct:2,explain:'El registro prueba qué credencial se usó, no la identidad de quien la portaba. La pérdida declarada y la ausencia de biometría impiden afirmar quién entró.'},
+ {title:'La edición encubierta',brief:'Un informe confidencial se modificó a las 16:42. Los registros no señalan directamente al responsable: reconstruye la cadena de accesos.',facts:[
+ ['Registro del documento','Edición a las 16:42 · sesión de usuario K-17 · origen interno'],
+ ['Directorio de sesiones','K-17 inició sesión en T-3 a las 16:35; cierre a las 16:49'],
+ ['Registro de T-3','Conectada a la red de 16:39 a 16:51'],
+ ['Registro de T-2','Operativa a las 16:42, pero solo con la sesión K-22'],
+ ['Registro de T-1','Sin conexión desde las 16:00'],
+ ['Registro de T-4','Mantenimiento de 15:30 a 17:00']],
+ q:'¿Desde qué terminal se realizó la edición?',options:['T-2, porque estaba operativa','T-3, porque alojaba K-17 a esa hora','T-1, porque estaba desconectada','No se puede saber si hubo edición'],correct:1,explain:'El documento fue editado por K-17, cuya sesión estaba activa en T-3. T-2 estaba operativa, pero alojaba otra sesión.'},
+ {title:'La orden falsificada',brief:'Cuatro órdenes compiten por activar el protocolo. Solo una cumple TODAS las normas; algunas parecen válidas a primera vista.',facts:[
+ ['Norma 1 · Sello','Las órdenes de nivel ALFA llevan sello OMEGA'],
+ ['Norma 2 · Prioridad','En horario nocturno (20:00–06:00), la prioridad obligatoria es ROJA'],
+ ['Norma 3 · Integridad','El código de una orden ALFA debe ser par y sus dos cifras deben sumar 10'],
+ ['Norma 4 · Caducidad','Una orden vence 15 minutos después de emitirse. Hora de recepción: 22:10'],
+ ['Mensaje A','ALFA · OMEGA · ROJA · 64 · emitido 21:50'],
+ ['Mensaje B','ALFA · OMEGA · ROJA · 73 · emitido 22:04'],
+ ['Mensaje C','ALFA · SIGMA · ROJA · 82 · emitido 22:06'],
+ ['Mensaje D','ALFA · OMEGA · ROJA · 82 · emitido 22:03']],
+ q:'¿Qué orden debe autorizarse?',options:['Mensaje A','Mensaje B','Mensaje C','Mensaje D'],correct:3,explain:'D tiene sello OMEGA, prioridad ROJA, código 82 (par y 8+2=10) y solo siete minutos de antigüedad. Las demás incumplen al menos una norma.'}
 ];
 let audit={stage:0,mistakes:0,selected:[],revealed:[]};
 function saveAudit(){localStorage.setItem(AUDIT_SESSION,JSON.stringify(audit))}
@@ -200,6 +205,51 @@ function finishPattern(){
  show('test');$('test-title').textContent='Retención certificada';$('timer').textContent='FINALIZADA';$('test-progress').style.width='100%';
  $('test-content').innerHTML=`<div class="center" style="padding:30px 0"><div class="eyebrow">Resultado oficial de los Vigilantes</div><h2 style="font:70px Georgia,serif;color:var(--gold);margin:10px">${state.patternScore} <small style="font-size:20px">/ 12</small></h2><p>Secuencias superadas: 3 / 3 · Intentos fallidos: ${pattern.mistakes}</p><p class="muted">Fragmento de autorización recuperado: <b style="color:var(--gold)">9</b></p><button class="btn" id="pattern-return">VOLVER AL EXPEDIENTE →</button></div>`;
  $('pattern-return').onclick=dashboard
+}
+
+
+// Consola oculta: mantener pulsado el sello «C» durante 3 segundos.
+// Protección de interfaz, no autenticación: cualquier persona con acceso al navegador
+// puede inspeccionar el código fuente. Para un panel remoto hace falta backend.
+let adminHold=null;
+const adminSeal=document.querySelector('.seal');
+adminSeal.style.cursor='default';
+function openAdmin(){show('dashboard');$('admin-panel').classList.remove('hidden');renderAdmin();$('admin-panel').scrollIntoView({behavior:'smooth',block:'start'})}
+function hideAdmin(){$('admin-panel').classList.add('hidden')}
+adminSeal.addEventListener('pointerdown',()=>{clearTimeout(adminHold);adminHold=setTimeout(openAdmin,3000)});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>adminSeal.addEventListener(ev,()=>clearTimeout(adminHold)));
+adminSeal.addEventListener('contextmenu',e=>e.preventDefault());
+$('admin-close').onclick=hideAdmin;
+function adminReset(i){
+ const names=['observación','criptografía','auditoría','patrones'];
+ if(!confirm('¿Reiniciar '+names[i]+'? Se borrará el resultado y el avance de esa prueba en este navegador.'))return;
+ if(i===0){clearInterval(ticker);localStorage.removeItem(SESSION);Object.assign(state,{completed:false,score:null,answers:[],attempts:0})}
+ if(i===1){localStorage.removeItem(CIPHER_SESSION);Object.assign(state,{cipherCompleted:false,cipherScore:null,cipherMistakes:0,cipherHints:0})}
+ if(i===2){localStorage.removeItem(AUDIT_SESSION);Object.assign(state,{auditCompleted:false,auditScore:null,auditMistakes:0})}
+ if(i===3){clearPatternTimers();localStorage.removeItem(PATTERN_SESSION);Object.assign(state,{patternCompleted:false,patternScore:null,patternMistakes:0})}
+ save();dashboard();$('admin-panel').classList.remove('hidden');renderAdmin()
+}
+function adminUnlock(i){
+ if(i===0){state.completed=true;state.score??=12}
+ if(i===1){state.completed=true;state.score??=12;state.cipherCompleted=true;state.cipherScore??=12}
+ if(i===2){state.completed=true;state.score??=12;state.cipherCompleted=true;state.cipherScore??=12;state.auditCompleted=true;state.auditScore??=12}
+ if(i===3){state.completed=true;state.score??=12;state.cipherCompleted=true;state.cipherScore??=12;state.auditCompleted=true;state.auditScore??=12;state.patternCompleted=true;state.patternScore??=12}
+ save();dashboard();$('admin-panel').classList.remove('hidden');renderAdmin()
+}
+function renderAdmin(){
+ const data=[
+ ['01 · Observación',state.completed,state.score,localStorage.getItem(SESSION)],
+ ['02 · Criptografía',state.cipherCompleted,state.cipherScore,localStorage.getItem(CIPHER_SESSION)],
+ ['03 · Auditoría',state.auditCompleted,state.auditScore,localStorage.getItem(AUDIT_SESSION)],
+ ['04 · Patrones',state.patternCompleted,state.patternScore,localStorage.getItem(PATTERN_SESSION)]
+ ];
+ $('admin-stats').innerHTML=data.map(([name,done,score,session])=>`<div style="padding:10px 0;border-bottom:1px solid #59492c"><strong>${name}</strong> · ${done?'Completada · '+score+'/12':session?'En curso':'Sin comenzar'}</div>`).join('');
+ $('admin-actions').innerHTML='';
+ data.forEach((_,i)=>{
+ const reset=document.createElement('button');reset.className='btn small secondary';reset.textContent='Reiniciar '+(i+1);reset.onclick=()=>adminReset(i);$('admin-actions').append(reset);
+ const unlock=document.createElement('button');unlock.className='btn small secondary';unlock.textContent='Desbloquear hasta '+(i+1);unlock.onclick=()=>adminUnlock(i);$('admin-actions').append(unlock);
+ });
+ const all=document.createElement('button');all.className='btn small';all.textContent='REINICIAR TODO';all.onclick=()=>{if(!confirm('¿Borrar TODO el progreso de las cuatro pruebas en este navegador?'))return;clearInterval(ticker);clearPatternTimers();[SESSION,CIPHER_SESSION,AUDIT_SESSION,PATTERN_SESSION].forEach(k=>localStorage.removeItem(k));state={...defaultState,entered:true};save();dashboard();$('admin-panel').classList.remove('hidden');renderAdmin()};$('admin-actions').append(all);
 }
 
 $('start').onclick=()=>{state.entered=true;save();dashboard()};$('chat-toggle').onclick=()=>{const open=$('chat').classList.toggle('hidden');$('chat-toggle').setAttribute('aria-expanded',String(!open))};$('chat-close').onclick=()=>{$('chat').classList.add('hidden');$('chat-toggle').setAttribute('aria-expanded','false')};if(state.entered)dashboard();else show('welcome');
